@@ -12,9 +12,7 @@ pub mod types;
 pub use detection::FaceDetector;
 use image::RgbImage;
 pub use recognition::FaceRecognizer;
-pub use types::{BoundingBox, DetectdFace, FaceEmbedding, FaceLandmarks, FaceResult};
-
-use crate::types::Face;
+pub use types::{BoundingBox, DetectdFace, Face, FaceEmbedding, FaceLandmarks};
 
 pub struct FaceEngine {
     det: FaceDetector,
