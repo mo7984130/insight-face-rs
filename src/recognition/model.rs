@@ -27,8 +27,8 @@ impl FaceRecognizer {
 
     pub fn extract_embedding(
         &mut self,
-        img: RgbImage,
-        faces: Vec<DetectdFace>,
+        img: &RgbImage,
+        faces: &Vec<DetectdFace>,
     ) -> Result<Vec<FaceEmbedding>> {
         let mut results = Vec::with_capacity(faces.len());
 

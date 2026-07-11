@@ -47,8 +47,19 @@ impl std::ops::Deref for FaceEmbedding {
     }
 }
 
-pub struct FaceResult {
-    pub bbox: BoundingBox,
+pub struct Face {
     pub score: f32,
+    pub bbox: BoundingBox,
+    pub landmarks: FaceLandmarks,
     pub embedding: FaceEmbedding,
+}
+impl Face {
+    pub fn from(face: DetectdFace, embedding: FaceEmbedding) -> Self {
+        Self {
+            score: face.score,
+            bbox: face.bbox,
+            landmarks: face.landmarks,
+            embedding: embedding,
+        }
+    }
 }
