@@ -10,9 +10,6 @@ homepage = "https://github.com/mo7984130/insight-face-rs"
 repository = "https://github.com/mo7984130/insight-face-rs"
 readme = "README.md"
 
-[[package.metadata.docs.rs]]
-features = ["rt-thea"]
-
 [package.metadata.docs.rs]
 all-features = true
 
