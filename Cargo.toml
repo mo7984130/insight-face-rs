@@ -2,6 +2,23 @@
 name = "insight-face-rs"
 version = "0.1.0"
 edition = "2024"
+description = "Face detection and recognition library using ONNX Runtime (Rust)"
+license = "MIT"
+license-file = "LICENSE"
+documentation = "https://docs.rs/insight-face-rs"
+homepage = "https://github.com/mo7984130/insight-face-rs"
+repository = "https://github.com/mo7984130/insight-face-rs"
+readme = "README.md"
+
+[[package.metadata.docs.rs]]
+features = ["rt-thea"]
+
+[package.metadata.docs.rs]
+all-features = true
+
+[lib]
+name = "insight_face_rs"
+path = "src/lib.rs"
 
 [dependencies]
 image = "0.25.10"
@@ -12,5 +29,5 @@ ort = ">=2.0.0-rc.12, <3"
 thiserror = "2.0.18"
 
 [dev-dependencies]
+ab_glyph = "0.2.0"
 anyhow = "1"
-ab_glyph = "0.2"
