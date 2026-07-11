@@ -95,7 +95,7 @@ fn cosine_similarity(a: &FaceEmbedding, b: &FaceEmbedding) -> f32 {
 
 ## License
 
-[TODO]
+MIT
 
 ---
 
@@ -185,4 +185,4 @@ fn cosine_similarity(a: &FaceEmbedding, b: &FaceEmbedding) -> f32 {
 
 ## 许可证
 
-[待补充]
+MIT
