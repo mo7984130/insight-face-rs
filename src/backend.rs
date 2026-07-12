@@ -6,5 +6,7 @@ pub(crate) fn ensure_backend_initialized() {
     INIT.call_once(|| {
         #[cfg(feature = "backend-tract")]
         ort::set_api(ort_tract::api());
+        #[cfg(feature = "backend-candle")]
+        ort::set_api(ort_candle::api());
     });
 }
