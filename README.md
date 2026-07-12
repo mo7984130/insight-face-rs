@@ -30,12 +30,38 @@ Input tensors use NCHW layout and RGB channel order (the crate performs the
 ```toml
 [dependencies]
 insight-face-rs = "0.1"
-# Pin the ort version explicitly (the CUDA EP requires a matching CUDA runtime)
-ort = ">=2.0.0-rc.12, <3"
 ```
 
-> Using the CUDA execution provider requires a matching CUDA / cuDNN runtime in
-> your environment; otherwise execution falls back to CPU.
+### Backend selection
+
+Two ONNX backends are available; the default is **`backend-onnxruntime`**:
+
+| Feature | Description | Pros | Cons |
+| --- | --- | --- | --- |
+| `backend-onnxruntime`<br>(default) | Full ONNX Runtime via `ort/download-binaries` | Broad ONNX op support, dynamic input shapes | Larger binary, downloads prebuilt libs at build time |
+| `backend-tract` | Pure-Rust `tract`-based interpreter | Lighter binary, no native deps | Limited op support, **requires static input shape** (see below) |
+
+#### Switch to `backend-tract`
+
+```toml
+[dependencies]
+insight-face-rs = { version = "0.1", default-features = false, features = ["backend-tract"] }
+```
+
+> ⚠ **tract limitation**: The `tract` backend cannot load ONNX models with dynamic
+> (symbolic) input dimensions. If you get `Translating node #0 … Source
+> ToTypedTranslator` during model loading, your model has dynamic shapes. Use
+> [onnxsim](https://github.com/daquexian/onnx-simplifier) to fix the input shape:
+> ```bash
+> pip install onnxsim
+> python -m onnxsim model.onnx model_fixed.onnx \
+>     --overwrite-input-shape input.1:1,3,640,640
+> ```
+> Or simply switch back to the default `backend-onnxruntime`, which handles
+> dynamic shapes natively.
+
+If you choose to use a CUDA execution provider, ensure a matching CUDA / cuDNN
+runtime is installed in your environment; otherwise execution falls back to CPU.
 
 ## Quick start
 
@@ -62,7 +88,7 @@ fn main() -> anyhow::Result<()> {
     println!("detected {} face(s)", faces.len());
 
     // 3. Extract a 512-d embedding for each detected face
-    let embeddings: Vec<FaceEmbedding> = recognizer.extract_embedding(img, faces)?;
+    let embeddings: Vec<FaceEmbedding> = recognizer.extract_embedding(img, &faces)?;
 
     // 4. Compute cosine similarity (FaceEmbedding derefs to &[f32])
     let sim = cosine_similarity(&embeddings[0], &embeddings[1]);
@@ -84,7 +110,7 @@ fn cosine_similarity(a: &FaceEmbedding, b: &FaceEmbedding) -> f32 {
 - `FaceDetector::new(model_path, input_size, score_threshold, nms_threshold)` —
   loads the detection model; the last three arguments accept `None` to use the
   defaults.
-- `FaceDetector::detect(&mut self, img: &RgbImage) -> Result<Vec<DetectdFace>>` —
+- `FaceDetector::detect(&mut self, img: &RgbImage) -> Result<Vec<DetectedFace>>` —
   returns each face's `bbox`, `landmarks` (5 points) and `score`; NMS is already
   applied.
 - `FaceRecognizer::new(model_path, input_size)` — loads the recognition model.
@@ -124,12 +150,36 @@ MIT
 ```toml
 [dependencies]
 insight-face-rs = "0.1"
-# 显式约束 ort 版本（CUDA EP 需要对应 CUDA 运行时）
-ort = ">=2.0.0-rc.12, <3"
 ```
 
-> 使用 CUDA 执行提供器需要在环境中安装匹配的 CUDA / cuDNN 运行时；
-> 否则会回退到 CPU。
+### 后端选择
+
+提供了两种 ONNX 后端，默认使用 **`backend-onnxruntime`**：
+
+| 功能 | 描述 | 优点 | 缺点 |
+| --- | --- | --- | --- |
+| `backend-onnxruntime`<br>(默认) | 完整 ONNX Runtime，通过 `ort/download-binaries` | 算子支持全面，支持动态输入 shape | 二进制较大，构建时会下载预编译库 |
+| `backend-tract` | 纯 Rust 的 `tract` 解释器 | 更轻量，无原生依赖 | 算子支持有限，**要求静态输入 shape**（见下文） |
+
+#### 切换为 `backend-tract`
+
+```toml
+[dependencies]
+insight-face-rs = { version = "0.1", default-features = false, features = ["backend-tract"] }
+```
+
+> ⚠ **tract 限制**： `tract` 后端无法加载带有动态（符号）输入维度的 ONNX 模型。
+> 如果在加载模型时出现 `Translating node #0 … Source ToTypedTranslator`，说明模型含有动态 shape。
+> 可以通过 [onnxsim](https://github.com/daquexian/onnx-simplifier) 固定输入 shape：
+> ```bash
+> pip install onnxsim
+> python -m onnxsim model.onnx model_fixed.onnx \
+>     --overwrite-input-shape input.1:1,3,640,640
+> ```
+> 或直接切换回默认的 `backend-onnxruntime`，它对动态 shape 有原生支持。
+
+如果使用 CUDA 执行提供器，需要在环境中安装匹配的 CUDA / cuDNN 运行时；
+否则会回退到 CPU。
 
 ## 快速开始
 
@@ -155,7 +205,7 @@ fn main() -> anyhow::Result<()> {
     println!("检测到 {} 张人脸", faces.len());
 
     // 3. 对检测到的每张人脸提取 512 维特征
-    let embeddings: Vec<FaceEmbedding> = recognizer.extract_embedding(img, faces)?;
+    let embeddings: Vec<FaceEmbedding> = recognizer.extract_embedding(img, &faces)?;
 
     // 4. 计算余弦相似度（FaceEmbedding 解引用为 &[f32]）
     let sim = cosine_similarity(&embeddings[0], &embeddings[1]);
@@ -176,7 +226,7 @@ fn cosine_similarity(a: &FaceEmbedding, b: &FaceEmbedding) -> f32 {
 
 - `FaceDetector::new(model_path, input_size, score_threshold, nms_threshold)` —
   加载检测模型，后三个参数均可传 `None` 使用默认值。
-- `FaceDetector::detect(&mut self, img: &RgbImage) -> Result<Vec<DetectdFace>>` —
+- `FaceDetector::detect(&mut self, img: &RgbImage) -> Result<Vec<DetectedFace>>` —
   返回每张脸的 `bbox`、`landmarks`（5 点）与 `score`，已做 NMS 抑制。
 - `FaceRecognizer::new(model_path, input_size)` — 加载识别模型。
 - `FaceRecognizer::extract_embedding(&mut self, img, faces) -> Result<Vec<FaceEmbedding>>` —

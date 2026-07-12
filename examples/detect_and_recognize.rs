@@ -18,7 +18,7 @@ use ab_glyph::FontVec;
 use image::{Rgb, RgbImage};
 use imageproc::drawing::{draw_cross_mut, draw_hollow_rect_mut, draw_text_mut};
 use imageproc::rect::Rect;
-use insight_face_rs::{FaceDetector, FaceEmbedding, FaceRecognizer};
+use insight_face_rs::{DetectedFace, FaceDetector, FaceEmbedding, FaceRecognizer};
 
 const RED: Rgb<u8> = Rgb([255, 0, 0]);
 const GREEN: Rgb<u8> = Rgb([0, 255, 0]);
@@ -43,7 +43,7 @@ fn main() -> anyhow::Result<()> {
 
     // 2. Read the image and detect faces.
     let img: RgbImage = image::open(&image_path)?.to_rgb8();
-    let faces = detector.detect(&img)?;
+    let faces: Vec<DetectedFace> = detector.detect(&img)?;
     println!("detected {} face(s) in {}", faces.len(), image_path);
 
     // 3. Prepare an annotated copy of the image.
@@ -86,7 +86,7 @@ fn main() -> anyhow::Result<()> {
 
     // 6. Extract a 512-d embedding for each detected face, then compare the
     //    first two by cosine similarity.
-    let embeddings: Vec<FaceEmbedding> = recognizer.extract_embedding(img, faces)?;
+    let embeddings: Vec<FaceEmbedding> = recognizer.extract_embedding(&img, &faces)?;
     if embeddings.len() >= 2 {
         let sim = cosine_similarity(&embeddings[0], &embeddings[1]);
         println!(

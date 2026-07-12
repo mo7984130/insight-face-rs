@@ -6,9 +6,10 @@ use nalgebra::{Matrix2, Matrix2x3, Vector2};
 use ndarray::Array4;
 use ort::value::Tensor;
 
+use crate::backend::ensure_backend_initialized;
 use crate::config::recognizer::*;
 use crate::model::OnnxModel;
-use crate::types::{DetectdFace, FaceEmbedding};
+use crate::types::{DetectedFace, FaceEmbedding};
 use crate::{Error, Result};
 
 pub struct FaceRecognizer {
@@ -18,6 +19,8 @@ pub struct FaceRecognizer {
 
 impl FaceRecognizer {
     pub fn new(model_path: impl AsRef<Path>, input_size: Option<u32>) -> Result<Self> {
+        ensure_backend_initialized();
+
         let session = OnnxModel::new(model_path)?;
         Ok(Self {
             session,
@@ -28,7 +31,7 @@ impl FaceRecognizer {
     pub fn extract_embedding(
         &mut self,
         img: &RgbImage,
-        faces: &Vec<DetectdFace>,
+        faces: &Vec<DetectedFace>,
     ) -> Result<Vec<FaceEmbedding>> {
         let mut results = Vec::with_capacity(faces.len());
 

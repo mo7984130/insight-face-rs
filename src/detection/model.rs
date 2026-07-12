@@ -1,11 +1,12 @@
 use crate::{
     Result,
+    backend::ensure_backend_initialized,
     config::{
         common::{ANCHOR_NUM, STRIDES},
         detection::*,
     },
     model::OnnxModel,
-    types::{BoundingBox, DetectdFace, FaceLandmarks},
+    types::{BoundingBox, DetectedFace, FaceLandmarks},
 };
 use image::{RgbImage, imageops};
 use ndarray::{Array4, ArrayViewD};
@@ -26,6 +27,8 @@ impl FaceDetector {
         score_threshold: Option<f32>,
         nms_threshold: Option<f32>,
     ) -> Result<Self> {
+        ensure_backend_initialized();
+
         let session = OnnxModel::new(model_path)?;
         Ok(Self {
             session,
@@ -35,7 +38,7 @@ impl FaceDetector {
         })
     }
 
-    pub fn detect(&mut self, img: &RgbImage) -> Result<Vec<DetectdFace>> {
+    pub fn detect(&mut self, img: &RgbImage) -> Result<Vec<DetectedFace>> {
         let (scale, img) = self.preprocess_img(img)?;
         let outputs = self.session.run(Tensor::from_array(img)?)?;
         let faces = Self::process_outputs(outputs, scale, self.input_size, self.score_threshold)?;
@@ -82,14 +85,14 @@ impl FaceDetector {
         scale: f32,
         input_size: u32,
         score_threshold: f32,
-    ) -> Result<Vec<DetectdFace>> {
+    ) -> Result<Vec<DetectedFace>> {
         let scale = 1.0 / scale;
 
         let output_scores = [&outputs[0], &outputs[1], &outputs[2]];
         let output_bboxes = [&outputs[3], &outputs[4], &outputs[5]];
         let output_kps = [&outputs[6], &outputs[7], &outputs[8]];
 
-        let mut detections: Vec<DetectdFace> = Vec::new();
+        let mut detections: Vec<DetectedFace> = Vec::new();
 
         for (level, stride) in STRIDES.iter().enumerate() {
             let feat_size = input_size / stride;
@@ -139,7 +142,7 @@ impl FaceDetector {
                             kps[p][1] = (kp[p * 2 + 1] + anchor_y) * scaling_factor;
                         }
 
-                        detections.push(DetectdFace {
+                        detections.push(DetectedFace {
                             bbox: BoundingBox { x1, y1, x2, y2 },
                             landmarks: FaceLandmarks(kps),
                             score,
@@ -154,7 +157,7 @@ impl FaceDetector {
         Ok(detections)
     }
 
-    fn nms(mut detections: Vec<DetectdFace>, iou_threshold: f32) -> Vec<DetectdFace> {
+    fn nms(mut detections: Vec<DetectedFace>, iou_threshold: f32) -> Vec<DetectedFace> {
         detections.sort_unstable_by(|a, b| b.score.total_cmp(&a.score));
 
         let n = detections.len();

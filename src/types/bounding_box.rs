@@ -1,9 +1,7 @@
-pub struct DetectdFace {
-    pub bbox: BoundingBox,
-    pub landmarks: FaceLandmarks,
-    pub score: f32,
-}
+use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(from = "[f32; 4]", into = "[f32; 4]")]
 pub struct BoundingBox {
     pub x1: f32,
     pub y1: f32,
@@ -37,29 +35,18 @@ impl BoundingBox {
     }
 }
 
-pub struct FaceLandmarks(pub [[f32; 2]; 5]);
-
-pub struct FaceEmbedding(pub [f32; 512]);
-impl std::ops::Deref for FaceEmbedding {
-    type Target = [f32];
-    fn deref(&self) -> &Self::Target {
-        &self.0
+impl From<[f32; 4]> for BoundingBox {
+    fn from(value: [f32; 4]) -> Self {
+        BoundingBox {
+            x1: value[0],
+            y1: value[1],
+            x2: value[2],
+            y2: value[3],
+        }
     }
 }
-
-pub struct Face {
-    pub score: f32,
-    pub bbox: BoundingBox,
-    pub landmarks: FaceLandmarks,
-    pub embedding: FaceEmbedding,
-}
-impl Face {
-    pub fn from(face: DetectdFace, embedding: FaceEmbedding) -> Self {
-        Self {
-            score: face.score,
-            bbox: face.bbox,
-            landmarks: face.landmarks,
-            embedding: embedding,
-        }
+impl From<BoundingBox> for [f32; 4] {
+    fn from(value: BoundingBox) -> Self {
+        [value.x1, value.y1, value.x2, value.y2]
     }
 }

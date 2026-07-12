@@ -1,21 +1,17 @@
-# Insights
+# Examples
 
-- Run example:
-  ```bash
-  cargo run --example detect_and_recognize -- det_640.onnx w600k_r50.onnx input.jpg
-  ```
-  Output contains:
-  - bounding boxes of faces
-  - 5-point landmarks for each face
-  - confidence scores (and optional text labels when a font is passed)
-  - images saved to `output.jpg`
+## `detect_and_recognize`
 
-- When font is available, the face ID and score will be drawn onto the image.
-  No score will be printed to stdout when font is provided.
+Detect faces, extract 512-D embeddings, and save an annotated image.
 
-- The example also computes the cosine similarity (embedding vectors) between the
-  first two faces as a simple demo of `FaceEmbedding` usage (you may replace this
-  with custom logic).
+```bash
+cargo run --example detect_and_recognize -- det_640.onnx w600k_r50.onnx input.jpg [output.jpg] [font.ttf]
+```
 
-The whole example script and the repository are available at
-https://github.com/mo7984130/insight-face-rs.
+- Draws **bounding boxes** and **5-point landmarks** for every detected face.
+- Prints or draws **confidence scores** (text on image requires a `.ttf` font path).
+- Computes **cosine similarity** between the first two face embeddings.
+- Output: annotated image (default `output.jpg`).
+
+The full source is at
+<https://github.com/mo7984130/insight-face-rs/blob/main/examples/detect_and_recognize.rs>.
