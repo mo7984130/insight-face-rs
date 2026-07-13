@@ -21,6 +21,7 @@ default = ["backend-onnxruntime"]
 backend-tract = ["dep:ort-tract", "ort/alternative-backend"]
 backend-candle = ["dep:ort-candle", "ort/alternative-backend"]
 backend-onnxruntime = ["ort/download-binaries"]
+load-dynamic = ["ort/load-dynamic"]
 
 pgvector = ["dep:pgvector"]
 
