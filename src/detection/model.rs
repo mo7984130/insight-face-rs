@@ -1,10 +1,10 @@
 use crate::{
     Result,
-    backend::ensure_backend_initialized,
     config::{
         common::{ANCHOR_NUM, STRIDES},
         detection::*,
     },
+    init::init_ort,
     model::OnnxModel,
     types::{BoundingBox, DetectedFace, FaceLandmarks},
 };
@@ -27,7 +27,9 @@ impl FaceDetector {
         score_threshold: Option<f32>,
         nms_threshold: Option<f32>,
     ) -> Result<Self> {
-        ensure_backend_initialized();
+        println!("初始化ort");
+        init_ort()?;
+        println!("初始化ort成功");
 
         let session = OnnxModel::new(model_path)?;
         Ok(Self {

@@ -3,6 +3,8 @@ use ort::session::builder::SessionBuilder;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
+    #[error("lib load error: {0}")]
+    LoadLibError(String),
     #[error("model load error: {0}")]
     ModelLoadError(String),
     #[error("model run error: {0}")]

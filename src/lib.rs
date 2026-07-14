@@ -1,7 +1,7 @@
-pub(crate) mod backend;
 pub mod detection;
 mod error;
 mod face_engine;
+pub(crate) mod init;
 pub mod recognition;
 
 pub use error::Error;
