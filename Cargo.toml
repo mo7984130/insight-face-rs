@@ -1,6 +1,6 @@
 [package]
 name = "insight-face-rs"
-version = "1.4.0"
+version = "1.5.0"
 edition = "2024"
 description = "Face detection and recognition library using ONNX Runtime (Rust)"
 license = "MIT"
@@ -18,7 +18,7 @@ path = "src/lib.rs"
 
 [features]
 default = []
-load-dynamic = ["ort/load-dynamic"]
+load-dynamic = ["ort/load-dynamic", "ort/api-24"]
 
 pgvector = ["dep:pgvector"]
 
@@ -27,7 +27,7 @@ image = "0.25.10"
 imageproc = "0.27.0"
 nalgebra = "0.35.0"
 ndarray = "0.17.2"
-ort = {version = "2.0.0-rc.12", default-features = false, features = ["std", "ndarray", "load-dynamic", "api-24"]}
+ort = {version = "2.0.0-rc.12", default-features = false, features = ["std", "ndarray"]}
 pgvector = { version = "0.4.2", optional = true }
 serde = { version = "1.0.228", features = ["derive"] }
 thiserror = "2.0.18"
