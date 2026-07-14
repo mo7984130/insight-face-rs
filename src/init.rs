@@ -8,7 +8,7 @@ static INIT: OnceLock<std::result::Result<(), String>> = OnceLock::new();
 
 pub(crate) fn init_ort() -> Result<()> {
     let result = INIT.get_or_init(|| {
-        let path = "/opt/onnxruntime/libonnxruntime.so1";
+        let path = "/opt/onnxruntime/libonnxruntime.so";
 
         if !Path::new(path).is_file() {
             return Err(format!("onnxruntime dylib not found at {path}").to_string());
