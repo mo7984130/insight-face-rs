@@ -1,12 +1,12 @@
-use std::path::Path;
-use std::sync::OnceLock;
-
 use crate::Error;
-use crate::Result;
 
-static INIT: OnceLock<std::result::Result<(), String>> = OnceLock::new();
+#[cfg(feature = "load-dynamic")]
+static INIT: std::sync::OnceLock<std::result::Result<(), String>> = std::sync::OnceLock::new();
 
-pub(crate) fn init_ort() -> Result<()> {
+#[cfg(feature = "load-dynamic")]
+pub(crate) fn init_ort() -> Result<(), Error> {
+    use std::path::Path;
+
     let result = INIT.get_or_init(|| {
         let path = "/opt/onnxruntime/libonnxruntime.so";
 
@@ -26,4 +26,9 @@ pub(crate) fn init_ort() -> Result<()> {
     result
         .clone()
         .map_err(|e| Error::LoadLibError(e.to_string()))
+}
+
+#[cfg(not(feature = "load-dynamic"))]
+pub(crate) fn init_ort() -> Result<(), Error> {
+    Ok(())
 }
