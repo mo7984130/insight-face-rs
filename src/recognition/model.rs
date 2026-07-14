@@ -38,7 +38,6 @@ impl FaceRecognizer {
         for face in faces {
             let m = Self::estimate_similarity_transform(&face.landmarks.0, &ARCFACE_TEMPLATE);
             let aligned = Self::align_face(self.input_size, &img, &m)?;
-            // let _ = aligned.save(format!("./test-imgs/outputs/{}.jpg", face.score));
             let blob = Self::to_blob(self.input_size, &aligned);
 
             let outputs = self.session.run(Tensor::from_array(blob)?)?;
