@@ -1,6 +1,6 @@
 [package]
 name = "insight-face-rs"
-version = "1.5.1"
+version = "1.6.0"
 edition = "2024"
 description = "Face detection and recognition library using ONNX Runtime (Rust)"
 license = "MIT"
@@ -17,7 +17,8 @@ name = "insight_face_rs"
 path = "src/lib.rs"
 
 [features]
-default = []
+default = ["download-binaries"]
+download-binaries = ["ort/download-binaries", "ort/tls-rustls"]
 load-dynamic = ["ort/load-dynamic", "ort/api-24"]
 
 pgvector = ["dep:pgvector"]
