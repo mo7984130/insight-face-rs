@@ -49,7 +49,7 @@ impl FaceRecognizer {
             })?;
             let embedding: [f32; 512] = std::array::from_fn(|i| slice[i]);
 
-            results.push(FaceEmbedding(embedding));
+            results.push(FaceEmbedding(embedding).normalize());
         }
 
         Ok(results)
