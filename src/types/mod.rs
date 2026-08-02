@@ -7,5 +7,6 @@ mod face_landmarks;
 pub use bounding_box::BoundingBox;
 pub use detected_face::DetectedFace;
 pub use face::Face;
+pub use face_embedding::DIMS;
 pub use face_embedding::FaceEmbedding;
 pub use face_landmarks::FaceLandmarks;
