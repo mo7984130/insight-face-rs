@@ -2,4 +2,4 @@
 /target
 /Cargo.lock
 /test-imgs
-*.jpg
+/*.jpg

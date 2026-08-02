@@ -1,6 +1,11 @@
+use serde::Deserialize;
+use serde::Serialize;
+use serde_big_array::BigArray;
+
 const DIMS: usize = 512;
 
-pub struct FaceEmbedding(pub [f32; DIMS]);
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub struct FaceEmbedding(#[serde(with = "BigArray")] pub [f32; DIMS]);
 impl std::ops::Deref for FaceEmbedding {
     type Target = [f32];
     fn deref(&self) -> &Self::Target {
