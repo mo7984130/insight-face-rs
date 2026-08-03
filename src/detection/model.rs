@@ -38,10 +38,24 @@ impl FaceDetector {
         })
     }
 
+    /// Detect faces in the image.
+    ///
+    /// Returns one [`DetectedFace`] per face after NMS. The `bbox` and
+    /// `landmarks` coordinates are normalized to `[0, 1]` relative to the
+    /// input image: `x` values are divided by the image width and `y` values
+    /// by the image height.
     pub fn detect(&mut self, img: &RgbImage) -> Result<Vec<DetectedFace>> {
+        let (orig_w, orig_h) = img.dimensions();
         let (scale, img) = self.preprocess_img(img)?;
         let outputs = self.session.run(Tensor::from_array(img)?)?;
-        let faces = Self::process_outputs(outputs, scale, self.input_size, self.score_threshold)?;
+        let faces = Self::process_outputs(
+            outputs,
+            scale,
+            self.input_size,
+            self.score_threshold,
+            orig_w,
+            orig_h,
+        )?;
         Ok(Self::nms(faces, self.nms_threshold))
     }
 
@@ -85,6 +99,8 @@ impl FaceDetector {
         scale: f32,
         input_size: u32,
         score_threshold: f32,
+        orig_w: u32,
+        orig_h: u32,
     ) -> Result<Vec<DetectedFace>> {
         let scale = 1.0 / scale;
 
@@ -143,8 +159,8 @@ impl FaceDetector {
                         }
 
                         detections.push(DetectedFace {
-                            bbox: BoundingBox { x1, y1, x2, y2 },
-                            landmarks: FaceLandmarks(kps),
+                            bbox: BoundingBox { x1, y1, x2, y2 }.to_relative(orig_w, orig_h),
+                            landmarks: FaceLandmarks(kps).to_relative(orig_w, orig_h),
                             score,
                         });
 

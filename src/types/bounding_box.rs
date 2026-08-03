@@ -1,5 +1,11 @@
 use serde::{Deserialize, Serialize};
 
+/// Axis-aligned bounding box in `(x1, y1, x2, y2)` form.
+///
+/// Coordinates returned by [`FaceDetector::detect`](crate::FaceDetector) are
+/// normalized to `[0, 1]` relative to the original image: `x` coordinates are
+/// divided by the image width and `y` coordinates by the image height. Use
+/// [`BoundingBox::to_absolute`] to convert back to pixels.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(from = "[f32; 4]", into = "[f32; 4]")]
 pub struct BoundingBox {
@@ -32,6 +38,32 @@ impl BoundingBox {
         let inter_area = self.inter_area(other);
         let union_area = self.union_area(other, inter_area);
         inter_area / union_area
+    }
+
+    /// Convert these normalized `[0, 1]` coordinates to absolute pixels for an
+    /// image of the given size.
+    pub fn to_absolute(&self, width: u32, height: u32) -> Self {
+        let w = width as f32;
+        let h = height as f32;
+        Self {
+            x1: self.x1 * w,
+            y1: self.y1 * h,
+            x2: self.x2 * w,
+            y2: self.y2 * h,
+        }
+    }
+
+    /// Convert these absolute pixel coordinates to normalized `[0, 1]`
+    /// coordinates relative to an image of the given size.
+    pub fn to_relative(&self, width: u32, height: u32) -> Self {
+        let w = width as f32;
+        let h = height as f32;
+        Self {
+            x1: self.x1 / w,
+            y1: self.y1 / h,
+            x2: self.x2 / w,
+            y2: self.y2 / h,
+        }
     }
 }
 

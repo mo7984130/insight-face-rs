@@ -29,7 +29,7 @@ Input tensors use NCHW layout and RGB channel order (the crate performs the
 
 ```toml
 [dependencies]
-insight-face-rs = "0.1"
+insight-face-rs = "1.0"
 ```
 
 ### Backend selection
@@ -112,7 +112,10 @@ fn cosine_similarity(a: &FaceEmbedding, b: &FaceEmbedding) -> f32 {
   defaults.
 - `FaceDetector::detect(&mut self, img: &RgbImage) -> Result<Vec<DetectedFace>>` —
   returns each face's `bbox`, `landmarks` (5 points) and `score`; NMS is already
-  applied.
+  applied. `bbox` and `landmarks` coordinates are normalized to `[0, 1]`
+  relative to the original image (`x` / width, `y` / height). Use
+  `BoundingBox::to_absolute(w, h)` / `FaceLandmarks::to_absolute(w, h)` to
+  convert back to pixels.
 - `FaceRecognizer::new(model_path, input_size)` — loads the recognition model.
 - `FaceRecognizer::extract_embedding(&mut self, img, faces) -> Result<Vec<FaceEmbedding>>` —
   aligns each face by its landmarks internally and outputs 512-d vectors.
@@ -149,7 +152,7 @@ MIT
 
 ```toml
 [dependencies]
-insight-face-rs = "0.1"
+insight-face-rs = "1.0"
 ```
 
 ### 后端选择
@@ -228,6 +231,8 @@ fn cosine_similarity(a: &FaceEmbedding, b: &FaceEmbedding) -> f32 {
   加载检测模型，后三个参数均可传 `None` 使用默认值。
 - `FaceDetector::detect(&mut self, img: &RgbImage) -> Result<Vec<DetectedFace>>` —
   返回每张脸的 `bbox`、`landmarks`（5 点）与 `score`，已做 NMS 抑制。
+  `bbox` 与 `landmarks` 坐标为相对于原图的归一化值（`[0, 1]`：`x` 除以宽、`y` 除以高）。
+  需要像素坐标时可用 `BoundingBox::to_absolute(w, h)` / `FaceLandmarks::to_absolute(w, h)` 换算。
 - `FaceRecognizer::new(model_path, input_size)` — 加载识别模型。
 - `FaceRecognizer::extract_embedding(&mut self, img, faces) -> Result<Vec<FaceEmbedding>>` —
   内部根据关键点对齐人脸并输出 512 维向量。

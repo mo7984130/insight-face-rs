@@ -36,7 +36,10 @@ impl FaceRecognizer {
         let mut results = Vec::with_capacity(faces.len());
 
         for face in faces {
-            let m = Self::estimate_similarity_transform(&face.landmarks.0, &ARCFACE_TEMPLATE);
+            // Landmarks from detection are normalized to [0, 1]; convert them
+            // back to image pixels before estimating the alignment transform.
+            let landmarks = face.landmarks.to_absolute(img.width(), img.height());
+            let m = Self::estimate_similarity_transform(&landmarks.0, &ARCFACE_TEMPLATE);
             let aligned = Self::align_face(self.input_size, &img, &m)?;
             let blob = Self::to_blob(self.input_size, &aligned);
 

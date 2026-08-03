@@ -17,6 +17,7 @@
 //!   from reported statistics.
 //! - `font.ttf` is optional. When provided, score labels are drawn on the
 //!   image; otherwise scores are only printed to stdout.
+// cargo run --release --example detect_and_recognize -- models/det_10g.onnx models/w600k_r50.onnx ./test-imgs/test.jpg
 
 use std::time::{Duration, Instant};
 
@@ -146,8 +147,9 @@ fn main() -> anyhow::Result<()> {
     println!("--- per-face details (last run) ---");
     for (i, face) in last_faces.iter().enumerate() {
         let b = &face.bbox;
+        let abs = b.to_absolute(img.width(), img.height());
         println!(
-            "  face {i}: score={:.4}  bbox=({:.0},{:.0},{:.0},{:.0})  area={:.0}",
+            "  face {i}: score={:.4}  bbox=({:.4},{:.4},{:.4},{:.4})  area={:.4}",
             face.score,
             b.x1,
             b.y1,
@@ -155,9 +157,13 @@ fn main() -> anyhow::Result<()> {
             b.y2,
             b.area()
         );
-        println!("          landmarks:");
+        println!(
+            "           bbox_px=({:.0},{:.0},{:.0},{:.0})",
+            abs.x1, abs.y1, abs.x2, abs.y2
+        );
+        println!("          landmarks (normalized):");
         for (kp_i, kp) in face.landmarks.0.iter().enumerate() {
-            println!("            {kp_i}: ({:.1}, {:.1})", kp[0], kp[1]);
+            println!("            {kp_i}: ({:.4}, {:.4})", kp[0], kp[1]);
         }
     }
     println!();
@@ -195,14 +201,16 @@ fn main() -> anyhow::Result<()> {
 
     let mut out = img.clone();
     for (i, face) in last_faces.iter().enumerate() {
-        let b = &face.bbox;
+        // Detection coordinates are normalized to [0, 1]; convert them back to
+        // pixels for drawing.
+        let b = face.bbox.to_absolute(img.width(), img.height());
         let x = b.x1 as i32;
         let y = b.y1 as i32;
         let w = (b.x2 - b.x1) as u32;
         let h = (b.y2 - b.y1) as u32;
         draw_hollow_rect_mut(&mut out, Rect::at(x, y).of_size(w, h), RED);
 
-        for kp in &face.landmarks.0 {
+        for kp in face.landmarks.to_absolute(img.width(), img.height()).0 {
             draw_cross_mut(&mut out, GREEN, kp[0] as i32, kp[1] as i32);
         }
 
