@@ -100,4 +100,18 @@ impl FaceEmbedding {
         }
         FaceEmbedding(out)
     }
+
+    /// 余弦相似度: `self · other / (|self| × |other|)`,范围 [-1, 1]
+    #[inline]
+    pub fn cosine_similarity(&self, other: &Self) -> f32 {
+        let mut dot = 0.0f32;
+        let mut norm_self = 0.0f32;
+        let mut norm_other = 0.0f32;
+        for (x, y) in self.0.iter().zip(other.0.iter()) {
+            dot += x * y;
+            norm_self += x * x;
+            norm_other += y * y;
+        }
+        dot / (norm_self.sqrt() * norm_other.sqrt())
+    }
 }
