@@ -115,3 +115,80 @@ impl FaceEmbedding {
         dot / (norm_self.sqrt() * norm_other.sqrt())
     }
 }
+
+#[cfg(feature = "sea-orm")]
+mod sea_orm_impl {
+    use super::{DIMS, FaceEmbedding};
+
+    use sea_orm::sea_query::{ArrayType, ColumnType, Nullable, Value, ValueType, ValueTypeErr};
+    use sea_orm::{ColIdx, DbErr, QueryResult, TryGetError, TryGetable};
+
+    /// FaceEmbedding -> SeaQuery Value
+    impl From<FaceEmbedding> for Value {
+        fn from(value: FaceEmbedding) -> Self {
+            pgvector::Vector::from(value).into()
+        }
+    }
+
+    /// DB row -> FaceEmbedding
+    impl TryGetable for FaceEmbedding {
+        fn try_get_by<I: ColIdx>(res: &QueryResult, idx: I) -> Result<Self, TryGetError> {
+            let vector = <pgvector::Vector as TryGetable>::try_get_by(res, idx)?;
+
+            let slice = vector.as_slice();
+
+            if slice.len() != DIMS {
+                return Err(DbErr::Type(format!(
+                    "invalid FaceEmbedding dimension: expected {}, got {}",
+                    DIMS,
+                    slice.len()
+                ))
+                .into());
+            }
+
+            let mut embedding = [0.0f32; DIMS];
+            embedding.copy_from_slice(slice);
+
+            Ok(FaceEmbedding(embedding))
+        }
+    }
+
+    /// SeaQuery Value -> FaceEmbedding
+    impl ValueType for FaceEmbedding {
+        fn try_from(value: Value) -> Result<Self, ValueTypeErr> {
+            let vector = <pgvector::Vector as ValueType>::try_from(value)?;
+
+            let slice = vector.as_slice();
+
+            if slice.len() != DIMS {
+                return Err(ValueTypeErr);
+            }
+
+            let mut embedding = [0.0f32; DIMS];
+            embedding.copy_from_slice(slice);
+
+            Ok(FaceEmbedding(embedding))
+        }
+
+        fn type_name() -> String {
+            "FaceEmbedding".to_owned()
+        }
+
+        fn array_type() -> ArrayType {
+            // pgvector 本身目前也不支持 vector[] 的 ArrayType。
+            <pgvector::Vector as ValueType>::array_type()
+        }
+
+        fn column_type() -> ColumnType {
+            // 这里特意指定维数，生成 schema 时得到 vector(512)
+            ColumnType::Vector(Some(DIMS as u32))
+        }
+    }
+
+    /// 支持 Option<FaceEmbedding>
+    impl Nullable for FaceEmbedding {
+        fn null() -> Value {
+            <pgvector::Vector as Nullable>::null()
+        }
+    }
+}
