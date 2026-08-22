@@ -1,6 +1,6 @@
 [package]
 name = "insight-face-rs"
-version = "2.3.0"
+version = "2.4.0"
 edition = "2024"
 description = "Face detection and recognition library using ONNX Runtime (Rust)"
 license = "MIT"

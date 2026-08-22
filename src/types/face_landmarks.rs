@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 /// [`FaceLandmarks::to_absolute`] to convert back to pixels.
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(from = "[[f32; 2]; 5]", into = "[[f32; 2]; 5]")]
+#[cfg_attr(feature = "sea-orm", derive(sea_orm::FromJsonQueryResult))]
 pub struct FaceLandmarks(pub [[f32; 2]; 5]);
 
 impl FaceLandmarks {

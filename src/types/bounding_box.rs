@@ -6,8 +6,12 @@ use serde::{Deserialize, Serialize};
 /// normalized to `[0, 1]` relative to the original image: `x` coordinates are
 /// divided by the image width and `y` coordinates by the image height. Use
 /// [`BoundingBox::to_absolute`] to convert back to pixels.
+/// - origin `(0, 0)` is at the top-left
+/// - x increases to the right
+/// - y increases downward
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 #[serde(from = "[f32; 4]", into = "[f32; 4]")]
+#[cfg_attr(feature = "sea-orm", derive(sea_orm::FromJsonQueryResult))]
 pub struct BoundingBox {
     pub x1: f32,
     pub y1: f32,
@@ -23,7 +27,7 @@ impl BoundingBox {
         let x1 = self.x1.max(other.x1);
         let y1 = self.y1.max(other.y1);
         let x2 = self.x2.min(other.x2);
-        let y2 = self.y2.max(other.y2);
+        let y2 = self.y2.min(other.y2);
 
         let w = (x2 - x1).max(0.0);
         let h = (y2 - y1).max(0.0);
@@ -37,7 +41,11 @@ impl BoundingBox {
     pub fn iou(&self, other: &Self) -> f32 {
         let inter_area = self.inter_area(other);
         let union_area = self.union_area(other, inter_area);
-        inter_area / union_area
+        if union_area > 0.0 {
+            inter_area / union_area
+        } else {
+            0.0
+        }
     }
 
     /// Convert these normalized `[0, 1]` coordinates to absolute pixels for an
