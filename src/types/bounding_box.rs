@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 /// - origin `(0, 0)` is at the top-left
 /// - x increases to the right
 /// - y increases downward
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(from = "[f32; 4]", into = "[f32; 4]")]
 #[cfg_attr(feature = "sea-orm", derive(sea_orm::FromJsonQueryResult))]
 pub struct BoundingBox {

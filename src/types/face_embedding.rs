@@ -4,7 +4,7 @@ use serde_big_array::BigArray;
 
 pub const DIMS: usize = 512;
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 pub struct FaceEmbedding(#[serde(with = "BigArray")] pub [f32; DIMS]);
 impl std::ops::Deref for FaceEmbedding {
     type Target = [f32];

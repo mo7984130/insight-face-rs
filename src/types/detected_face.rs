@@ -4,6 +4,7 @@ use crate::types::{BoundingBox, FaceLandmarks};
 ///
 /// Both [`bbox`](Self::bbox) and [`landmarks`](Self::landmarks) use
 /// coordinates normalized to `[0, 1]` relative to the original image.
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DetectedFace {
     pub bbox: BoundingBox,
     pub landmarks: FaceLandmarks,

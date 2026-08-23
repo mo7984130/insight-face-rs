@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 /// normalized to `[0, 1]` relative to the original image: `x` coordinates are
 /// divided by the image width and `y` coordinates by the image height. Use
 /// [`FaceLandmarks::to_absolute`] to convert back to pixels.
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq)]
 #[serde(from = "[[f32; 2]; 5]", into = "[[f32; 2]; 5]")]
 #[cfg_attr(feature = "sea-orm", derive(sea_orm::FromJsonQueryResult))]
 pub struct FaceLandmarks(pub [[f32; 2]; 5]);
