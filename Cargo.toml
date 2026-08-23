@@ -1,6 +1,6 @@
 [package]
 name = "insight-face-rs"
-version = "2.4.1"
+version = "2.4.2"
 edition = "2024"
 description = "Face detection and recognition library using ONNX Runtime (Rust)"
 license = "MIT"
@@ -21,7 +21,8 @@ default = ["download-binaries"]
 download-binaries = ["ort/download-binaries", "ort/tls-rustls"]
 load-dynamic = ["ort/load-dynamic", "ort/api-24"]
 pgvector = ["dep:pgvector"]
-sea-orm = ["dep:sea-orm", "dep:serde_json", "pgvector"]
+sea-orm = ["dep:sea-orm", "sea-orm/postgres-vector", "dep:serde_json", "pgvector"]
+cuda = ["ort/cuda"]
 
 [dependencies]
 image = "0.25.10"

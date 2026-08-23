@@ -13,7 +13,11 @@ pub(crate) struct OnnxModel {
 impl OnnxModel {
     pub(crate) fn new(model_path: impl AsRef<Path>) -> Result<Self> {
         let session = Session::builder()?
-            .with_execution_providers([ep::CUDA::default().build(), ep::CPU::default().build()])?
+            .with_execution_providers([
+                #[cfg(feature = "cuda")]
+                ep::CUDA::default().build(),
+                ep::CPU::default().build(),
+            ])?
             .commit_from_file(model_path)?;
         Ok(Self { session })
     }
