@@ -129,6 +129,10 @@ impl FaceEngine {
     }
 
     pub fn reclaim_if_idle(&self) -> Result<()> {
+        if self.config.idle_timeout.is_zero() {
+            return Ok(());
+        }
+
         let mut state = self.state.lock()?;
         let Some(last_used) = state.last_used else {
             return Ok(());
@@ -183,5 +187,21 @@ impl FaceEngine {
                 };
             }
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn zero_idle_timeout_does_not_reclaim_models() {
+        let config = FaceEngineConfig::new("det.onnx", "rec.onnx", Duration::ZERO);
+        let engine = FaceEngine::new_without_load(&config);
+        engine.state.lock().unwrap().last_used = Some(Instant::now());
+
+        engine.reclaim_if_idle().unwrap();
+
+        assert!(engine.state.lock().unwrap().last_used.is_some());
     }
 }

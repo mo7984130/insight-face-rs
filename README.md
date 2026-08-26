@@ -99,6 +99,7 @@ fn main() -> anyhow::Result<()> {
 
 - `FaceEngineConfig::new(det_model_path, rec_model_path, idle_timeout)` —
   configures model paths and the idle timeout used for reclaiming model memory.
+  Set `idle_timeout` to `Duration::ZERO` to disable automatic reclamation.
 - `FaceEngine::new(&config)` — loads both models immediately;
   `FaceEngine::new_without_load(&config)` defers loading until the first run.
 - `FaceEngine::run(&self, img: &RgbImage) -> Result<Vec<Face>>` — detects and
@@ -216,7 +217,7 @@ fn main() -> anyhow::Result<()> {
 ## API 概览
 
 - `FaceEngineConfig::new(det_model_path, rec_model_path, idle_timeout)` —
-  配置模型路径和空闲回收模型内存的超时时间。
+  配置模型路径和空闲回收模型内存的超时时间；传入 `Duration::ZERO` 可禁用自动回收。
 - `FaceEngine::new(&config)` — 立即加载两个模型；
   `FaceEngine::new_without_load(&config)` 延迟至首次推理时加载。
 - `FaceEngine::run(&self, img: &RgbImage) -> Result<Vec<Face>>` —
