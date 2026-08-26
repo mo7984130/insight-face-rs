@@ -82,11 +82,11 @@ impl FaceDetector {
             let row_start = y * w_usize * 3;
             let src_row = &raw[row_start..row_start + w_usize * 3];
             let dst_offset = y * input_size;
-            for (x, px) in src_row.chunks_exact(3).enumerate() {
+            for (x, &[r, g, b]) in src_row.as_chunks::<3>().0.iter().enumerate() {
                 let idx = dst_offset + x;
-                r_plane[idx] = (px[0] as f32 - 127.5) * INV_SCALE;
-                g_plane[idx] = (px[1] as f32 - 127.5) * INV_SCALE;
-                b_plane[idx] = (px[2] as f32 - 127.5) * INV_SCALE;
+                r_plane[idx] = (r as f32 - 127.5) * INV_SCALE;
+                g_plane[idx] = (g as f32 - 127.5) * INV_SCALE;
+                b_plane[idx] = (b as f32 - 127.5) * INV_SCALE;
             }
         }
 

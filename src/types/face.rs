@@ -12,7 +12,7 @@ impl Face {
             score: face.score,
             bbox: face.bbox,
             landmarks: face.landmarks,
-            embedding: embedding,
+            embedding,
         }
     }
 }
