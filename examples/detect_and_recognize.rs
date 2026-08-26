@@ -1,6 +1,5 @@
-//! Comprehensive benchmark: detect faces, extract embeddings, and save an
-//! annotated image with bounding boxes, 5-point landmarks, and per-face
-//! scores — all with detailed timing breakdowns across multiple runs.
+//! Comprehensive benchmark: detect and recognize faces with `FaceEngine`, then
+//! save an annotated image with bounding boxes, 5-point landmarks, and scores.
 //!
 //! Usage:
 //! ```bash
@@ -25,7 +24,7 @@ use ab_glyph::FontVec;
 use image::{Rgb, RgbImage};
 use imageproc::drawing::{draw_cross_mut, draw_hollow_rect_mut, draw_text_mut};
 use imageproc::rect::Rect;
-use insight_face_rs::{DetectedFace, FaceDetector, FaceEmbedding, FaceRecognizer};
+use insight_face_rs::{Face, FaceEngine, FaceEngineConfig};
 
 const RED: Rgb<u8> = Rgb([255, 0, 0]);
 const GREEN: Rgb<u8> = Rgb([0, 255, 0]);
@@ -50,8 +49,8 @@ fn main() -> anyhow::Result<()> {
     // ------------------------------------------------------------------
     println!("=== insight-face-rs Benchmark ===\n");
     let load_start = Instant::now();
-    let mut detector = FaceDetector::new(&det_model, None, None, None)?;
-    let mut recognizer = FaceRecognizer::new(&rec_model, None)?;
+    let config = FaceEngineConfig::new(&det_model, &rec_model, Duration::from_secs(60));
+    let engine = FaceEngine::new(&config)?;
     let load_time = load_start.elapsed();
     println!("models loaded in {:8.2} ms", ms(load_time));
     println!("  detection  : {det_model}");
@@ -74,7 +73,7 @@ fn main() -> anyhow::Result<()> {
     // 3. Warm-up run (excluded from statistics)
     // ------------------------------------------------------------------
     println!("--- warm-up (1 iteration) ---");
-    warmup(&mut detector, &mut recognizer, &img)?;
+    warmup(&engine, &img)?;
     println!();
 
     // ------------------------------------------------------------------
@@ -82,44 +81,29 @@ fn main() -> anyhow::Result<()> {
     // ------------------------------------------------------------------
     println!("--- benchmark ({num_runs} iterations) ---");
 
-    let mut detect_times = Vec::with_capacity(num_runs);
-    let mut recog_times = Vec::with_capacity(num_runs);
     let mut total_times = Vec::with_capacity(num_runs);
     let mut face_counts = Vec::with_capacity(num_runs);
 
     // The last run's data is retained for drawing / detailed output.
-    let mut last_faces: Vec<DetectedFace> = Vec::new();
-    let mut last_embeddings: Vec<FaceEmbedding> = Vec::new();
+    let mut last_faces: Vec<Face> = Vec::new();
 
     for run in 0..num_runs {
-        // --- detection ---
         let t0 = Instant::now();
-        let faces: Vec<DetectedFace> = detector.detect(&img)?;
-        let dt = t0.elapsed();
-
-        // --- recognition ---
-        let t1 = Instant::now();
-        let embeddings: Vec<FaceEmbedding> = recognizer.extract_embedding(&img, &faces)?;
-        let rt = t1.elapsed();
+        let faces = engine.run(&img)?;
         let total = t0.elapsed();
 
-        detect_times.push(dt);
-        recog_times.push(rt);
         total_times.push(total);
         face_counts.push(faces.len());
 
         println!(
-            "  run {:3}  detect={:>8.2} ms  recog={:>8.2} ms  total={:>8.2} ms  faces={}",
+            "  run {:3}  total={:>8.2} ms  faces={}",
             run + 1,
-            ms(dt),
-            ms(rt),
             ms(total),
             faces.len()
         );
 
         if run == num_runs - 1 {
             last_faces = faces;
-            last_embeddings = embeddings;
         }
     }
 
@@ -129,8 +113,6 @@ fn main() -> anyhow::Result<()> {
     println!();
     println!("--- statistics (over {num_runs} runs) ---");
 
-    print_stats("detection", &detect_times);
-    print_stats("recognition", &recog_times);
     print_stats("total      ", &total_times);
 
     let avg_faces: f64 =
@@ -171,11 +153,13 @@ fn main() -> anyhow::Result<()> {
     // ------------------------------------------------------------------
     // 7. Pairwise cosine similarities (from the last run)
     // ------------------------------------------------------------------
-    if last_embeddings.len() >= 2 {
+    if last_faces.len() >= 2 {
         println!("--- pairwise cosine similarity ---");
-        for i in 0..last_embeddings.len() {
-            for j in (i + 1)..last_embeddings.len() {
-                let sim = cosine_similarity(&last_embeddings[i], &last_embeddings[j]);
+        for i in 0..last_faces.len() {
+            for j in (i + 1)..last_faces.len() {
+                let sim = last_faces[i]
+                    .embedding
+                    .cosine_similarity(&last_faces[j].embedding);
                 println!(
                     "  face {i} ↔ face {j}:  sim = {:.6}  (1.0 = identical)",
                     sim
@@ -235,23 +219,10 @@ fn main() -> anyhow::Result<()> {
 // ---------------------------------------------------------------------------
 
 /// Single warm-up to prime GPU/CPU caches.
-fn warmup(
-    detector: &mut FaceDetector,
-    recognizer: &mut FaceRecognizer,
-    img: &RgbImage,
-) -> anyhow::Result<()> {
-    let faces = detector.detect(img)?;
-    let _embs = recognizer.extract_embedding(img, &faces)?;
+fn warmup(engine: &FaceEngine, img: &RgbImage) -> anyhow::Result<()> {
+    let faces = engine.run(img)?;
     println!("  detected {} face(s)", faces.len());
     Ok(())
-}
-
-/// Cosine similarity of two 512-d embeddings.
-fn cosine_similarity(a: &FaceEmbedding, b: &FaceEmbedding) -> f32 {
-    let dot: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
-    let na = a.iter().map(|x| x * x).sum::<f32>().sqrt();
-    let nb = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    dot / (na * nb)
 }
 
 /// Duration → fractional milliseconds.

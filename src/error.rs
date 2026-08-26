@@ -11,6 +11,8 @@ pub enum Error {
     ModelRunError(String),
     #[error("align face error: {0}")]
     AlignFaceError(String),
+    #[error("mutex error: {0}")]
+    MutexError(String),
 }
 
 impl From<ort::Error<()>> for Error {
@@ -28,6 +30,12 @@ impl From<ort::Error<SessionBuilder>> for Error {
 impl From<ShapeError> for Error {
     fn from(err: ShapeError) -> Self {
         Error::ModelRunError(err.to_string())
+    }
+}
+
+impl<T> From<std::sync::PoisonError<T>> for Error {
+    fn from(err: std::sync::PoisonError<T>) -> Self {
+        Error::MutexError(err.to_string())
     }
 }
 

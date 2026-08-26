@@ -11,7 +11,7 @@ pub(crate) mod model;
 pub mod types;
 
 pub use detection::FaceDetector;
-pub use face_engine::FaceEngine;
+pub use face_engine::{FaceEngine, FaceEngineConfig};
 pub use ort;
 pub use recognition::FaceRecognizer;
 pub use types::{BoundingBox, DetectedFace, Face, FaceEmbedding, FaceLandmarks};

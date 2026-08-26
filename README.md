@@ -45,7 +45,7 @@ Two ONNX backends are available; the default is **`backend-onnxruntime`**:
 
 ```toml
 [dependencies]
-insight-face-rs = { version = "0.1", default-features = false, features = ["backend-tract"] }
+insight-face-rs = { version = "3.0", default-features = false, features = ["backend-tract"] }
 ```
 
 > ⚠ **tract limitation**: The `tract` backend cannot load ONNX models with dynamic
@@ -69,44 +69,42 @@ A full runnable example is available at
 [`examples/detect_and_recognize.rs`](examples/detect_and_recognize.rs).
 
 ```rust
-use image::RgbImage;
-use insight_face_rs::{FaceDetector, FaceEmbedding, FaceRecognizer};
+use std::time::Duration;
+
+use insight_face_rs::{FaceEngine, FaceEngineConfig};
 
 fn main() -> anyhow::Result<()> {
-    // 1. Load models
-    let mut detector = FaceDetector::new(
+    // 1. Configure and load models
+    let config = FaceEngineConfig::new(
         "models/det_640.onnx",
-        None, // input_size, defaults to 640
-        None, // score_threshold, defaults to 0.6
-        None, // nms_threshold, defaults to 0.4
-    )?;
-    let mut recognizer = FaceRecognizer::new("models/w600k_r50.onnx", None)?;
+        "models/w600k_r50.onnx",
+        Duration::from_secs(60),
+    );
+    let engine = FaceEngine::new(&config)?;
 
-    // 2. Read the image and detect faces
+    // 2. Read the image and detect and recognize faces
     let img = image::open("examples/person.jpg")?.to_rgb8();
-    let faces = detector.detect(&img)?;
+    let faces = engine.run(&img)?;
     println!("detected {} face(s)", faces.len());
 
-    // 3. Extract a 512-d embedding for each detected face
-    let embeddings: Vec<FaceEmbedding> = recognizer.extract_embedding(img, &faces)?;
-
-    // 4. Compute cosine similarity (FaceEmbedding derefs to &[f32])
-    let sim = cosine_similarity(&embeddings[0], &embeddings[1]);
+    // 3. Compute cosine similarity between two face embeddings
+    let sim = faces[0].embedding.cosine_similarity(&faces[1].embedding);
     println!("similarity: {sim:.4}");
 
     Ok(())
-}
-
-fn cosine_similarity(a: &FaceEmbedding, b: &FaceEmbedding) -> f32 {
-    let dot: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
-    let na = a.iter().map(|x| x * x).sum::<f32>().sqrt();
-    let nb = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    dot / (na * nb)
 }
 ```
 
 ## API overview
 
+- `FaceEngineConfig::new(det_model_path, rec_model_path, idle_timeout)` —
+  configures model paths and the idle timeout used for reclaiming model memory.
+- `FaceEngine::new(&config)` — loads both models immediately;
+  `FaceEngine::new_without_load(&config)` defers loading until the first run.
+- `FaceEngine::run(&self, img: &RgbImage) -> Result<Vec<Face>>` — detects and
+  recognizes every face, returning its detection data and 512-d embedding.
+- `FaceEngine::unload()` and `FaceEngine::reclaim_if_idle()` release model
+  memory manually or after the configured idle timeout.
 - `FaceDetector::new(model_path, input_size, score_threshold, nms_threshold)` —
   loads the detection model; the last three arguments accept `None` to use the
   defaults.
@@ -168,7 +166,7 @@ insight-face-rs = "1.0"
 
 ```toml
 [dependencies]
-insight-face-rs = { version = "0.1", default-features = false, features = ["backend-tract"] }
+insight-face-rs = { version = "3.0", default-features = false, features = ["backend-tract"] }
 ```
 
 > ⚠ **tract 限制**： `tract` 后端无法加载带有动态（符号）输入维度的 ONNX 模型。
@@ -189,44 +187,42 @@ insight-face-rs = { version = "0.1", default-features = false, features = ["back
 完整可运行示例见 [`examples/detect_and_recognize.rs`](examples/detect_and_recognize.rs)。
 
 ```rust
-use image::RgbImage;
-use insight_face_rs::{FaceDetector, FaceEmbedding, FaceRecognizer};
+use std::time::Duration;
+
+use insight_face_rs::{FaceEngine, FaceEngineConfig};
 
 fn main() -> anyhow::Result<()> {
-    // 1. 加载模型
-    let mut detector = FaceDetector::new(
+    // 1. 配置并加载模型
+    let config = FaceEngineConfig::new(
         "models/det_640.onnx",
-        None, // input_size，默认 640
-        None, // score_threshold，默认 0.6
-        None, // nms_threshold，默认 0.4
-    )?;
-    let mut recognizer = FaceRecognizer::new("models/w600k_r50.onnx", None)?;
+        "models/w600k_r50.onnx",
+        Duration::from_secs(60),
+    );
+    let engine = FaceEngine::new(&config)?;
 
-    // 2. 读取图像并检测人脸
+    // 2. 读取图像并完成人脸检测与识别
     let img = image::open("examples/person.jpg")?.to_rgb8();
-    let faces = detector.detect(&img)?;
+    let faces = engine.run(&img)?;
     println!("检测到 {} 张人脸", faces.len());
 
-    // 3. 对检测到的每张人脸提取 512 维特征
-    let embeddings: Vec<FaceEmbedding> = recognizer.extract_embedding(img, &faces)?;
-
-    // 4. 计算余弦相似度（FaceEmbedding 解引用为 &[f32]）
-    let sim = cosine_similarity(&embeddings[0], &embeddings[1]);
+    // 3. 计算两张人脸特征的余弦相似度
+    let sim = faces[0].embedding.cosine_similarity(&faces[1].embedding);
     println!("相似度: {sim:.4}");
 
     Ok(())
-}
-
-fn cosine_similarity(a: &FaceEmbedding, b: &FaceEmbedding) -> f32 {
-    let dot: f32 = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum();
-    let na = a.iter().map(|x| x * x).sum::<f32>().sqrt();
-    let nb = b.iter().map(|x| x * x).sum::<f32>().sqrt();
-    dot / (na * nb)
 }
 ```
 
 ## API 概览
 
+- `FaceEngineConfig::new(det_model_path, rec_model_path, idle_timeout)` —
+  配置模型路径和空闲回收模型内存的超时时间。
+- `FaceEngine::new(&config)` — 立即加载两个模型；
+  `FaceEngine::new_without_load(&config)` 延迟至首次推理时加载。
+- `FaceEngine::run(&self, img: &RgbImage) -> Result<Vec<Face>>` —
+  完成人脸检测与识别，返回检测结果及对应的 512 维特征。
+- `FaceEngine::unload()` 与 `FaceEngine::reclaim_if_idle()` —
+  分别用于手动卸载模型和在超过配置的空闲时间后回收模型内存。
 - `FaceDetector::new(model_path, input_size, score_threshold, nms_threshold)` —
   加载检测模型，后三个参数均可传 `None` 使用默认值。
 - `FaceDetector::detect(&mut self, img: &RgbImage) -> Result<Vec<DetectedFace>>` —
