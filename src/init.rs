@@ -5,22 +5,12 @@ static INIT: std::sync::OnceLock<std::result::Result<(), String>> = std::sync::O
 
 #[cfg(feature = "load-dynamic")]
 pub(crate) fn init_ort() -> Result<(), Error> {
-    use std::path::Path;
-
-    let result = INIT.get_or_init(|| {
-        let path = "/opt/onnxruntime/libonnxruntime.so";
-
-        if !Path::new(path).is_file() {
-            return Err(format!("onnxruntime dylib not found at {path}").to_string());
+    let result = INIT.get_or_init(|| match ort::init_from("libonnxruntime.so") {
+        Ok(b) => {
+            b.commit();
+            Ok(())
         }
-
-        match ort::init_from(path) {
-            Ok(b) => {
-                b.commit();
-                Ok(())
-            }
-            Err(e) => Err(e.to_string()),
-        }
+        Err(e) => Err(e.to_string()),
     });
 
     result
