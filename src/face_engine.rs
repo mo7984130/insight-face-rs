@@ -126,6 +126,11 @@ impl FaceEngine {
         state.rec.take();
 
         state.last_used = None;
+
+        #[cfg(target_os = "linux")]
+        unsafe {
+            libc::malloc_trim(0);
+        }
     }
 
     pub fn reclaim_if_idle(&self) -> Result<()> {
