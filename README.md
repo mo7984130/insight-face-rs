@@ -104,6 +104,9 @@ fn main() -> anyhow::Result<()> {
   `FaceEngine::new_without_load(&config)` defers loading until the first run.
 - `FaceEngine::run(&self, img: &RgbImage) -> Result<Vec<Face>>` — detects and
   recognizes every face, returning its detection data and 512-d embedding.
+- `FaceEngine::run_from_file(&self, path: impl AsRef<Path>) -> Result<Vec<Face>>`
+  — convenience wrapper that loads an image from disk and delegates to
+  `FaceEngine::run`.
 - `FaceEngine::unload()` and `FaceEngine::reclaim_if_idle()` release model
   memory manually or after the configured idle timeout.
 - `FaceDetector::new(model_path, input_size, score_threshold, nms_threshold)` —
@@ -222,6 +225,8 @@ fn main() -> anyhow::Result<()> {
   `FaceEngine::new_without_load(&config)` 延迟至首次推理时加载。
 - `FaceEngine::run(&self, img: &RgbImage) -> Result<Vec<Face>>` —
   完成人脸检测与识别，返回检测结果及对应的 512 维特征。
+- `FaceEngine::run_from_file(&self, path: impl AsRef<Path>) -> Result<Vec<Face>>`
+  — 便捷方法：从磁盘读取图片后委托给 `FaceEngine::run` 执行。
 - `FaceEngine::unload()` 与 `FaceEngine::reclaim_if_idle()` —
   分别用于手动卸载模型和在超过配置的空闲时间后回收模型内存。
 - `FaceDetector::new(model_path, input_size, score_threshold, nms_threshold)` —

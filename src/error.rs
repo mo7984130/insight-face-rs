@@ -11,6 +11,8 @@ pub enum Error {
     ModelRunError(String),
     #[error("align face error: {0}")]
     AlignFaceError(String),
+    #[error("image load error: {0}")]
+    ImageLoadError(String),
     #[error("mutex error: {0}")]
     MutexError(String),
 }
@@ -30,6 +32,12 @@ impl From<ort::Error<SessionBuilder>> for Error {
 impl From<ShapeError> for Error {
     fn from(err: ShapeError) -> Self {
         Error::ModelRunError(err.to_string())
+    }
+}
+
+impl From<image::ImageError> for Error {
+    fn from(err: image::ImageError) -> Self {
+        Error::ImageLoadError(err.to_string())
     }
 }
 

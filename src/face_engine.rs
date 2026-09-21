@@ -1,5 +1,5 @@
 use std::{
-    path::PathBuf,
+    path::{Path, PathBuf},
     sync::{Arc, Mutex},
     time::{Duration, Instant},
 };
@@ -88,6 +88,11 @@ impl FaceEngine {
         state.last_used = Some(Instant::now());
 
         Ok(results)
+    }
+
+    pub fn run_from_file(&self, path: impl AsRef<Path>) -> Result<Vec<Face>> {
+        let img = image::open(path)?.to_rgb8();
+        self.run(&img)
     }
 
     fn load_det_locked(&self, state: &mut FaceState) -> Result<()> {
