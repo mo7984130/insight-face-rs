@@ -138,22 +138,26 @@ impl FaceEngine {
         }
     }
 
-    pub fn reclaim_if_idle(&self) -> Result<()> {
+    /// Reclaims resources if the engine is idle for the configured timeout.
+    ///
+    /// Returns `true` if resources were reclaimed, `false` otherwise.
+    pub fn reclaim_if_idle(&self) -> Result<bool> {
         if self.config.idle_timeout.is_zero() {
-            return Ok(());
+            return Ok(false);
         }
 
         let mut state = self.state.lock()?;
         let Some(last_used) = state.last_used else {
-            return Ok(());
+            return Ok(false);
         };
 
-        if last_used.elapsed() >= self.config.idle_timeout {
+        return if last_used.elapsed() >= self.config.idle_timeout {
             self.unload_locked(&mut state);
             state.last_used = None;
-        }
-
-        Ok(())
+            Ok(true)
+        } else {
+            Ok(false)
+        };
     }
 
     pub fn start_reaper_thread(engine: &Arc<Self>) {
@@ -182,8 +186,6 @@ impl FaceEngine {
         tokio::spawn(async move {
             let mut interval = tokio::time::interval(IDLE_SLEEP_DURATION);
 
-            interval.tick().await;
-
             loop {
                 interval.tick().await;
 
@@ -195,6 +197,34 @@ impl FaceEngine {
                     error!(error = %err, "face engine reaper stopped");
                     break;
                 };
+            }
+        });
+    }
+
+    #[cfg(feature = "tokio")]
+    pub fn start_reaper_with_callback<F>(engine: &Arc<Self>, callback: F)
+    where
+        F: Fn() + Send + Sync + 'static,
+    {
+        let weak = Arc::downgrade(engine);
+
+        tokio::spawn(async move {
+            let mut interval = tokio::time::interval(IDLE_SLEEP_DURATION);
+            loop {
+                interval.tick().await;
+
+                let Some(engine) = weak.upgrade() else {
+                    break;
+                };
+
+                match engine.reclaim_if_idle() {
+                    Ok(true) => callback(),
+                    Ok(false) => {}
+                    Err(err) => {
+                        error!(error = %err, "face engine reaper stopped");
+                        break;
+                    }
+                }
             }
         });
     }
